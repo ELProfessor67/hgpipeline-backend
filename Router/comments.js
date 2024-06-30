@@ -39,7 +39,7 @@ Comments.post("/comments/:id", async (req, res) => {
     }
 
     const newComment = {
-      username: user.channelName,
+      username: user.channelName || user.name,
       videoid: id,
       user_profile: user.profilePic,
       comment: comment,

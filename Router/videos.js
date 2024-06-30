@@ -157,8 +157,13 @@ Videos.get("/getvideos", async (req, res) => {
     let recommendedVideoIds = [];
 
     if (email != 'null') {
-      const recommendedResponse = await axios.get(`${process.env.AI_SERVER}/recommend?email=${email}`);
-      recommendedVideoIds = recommendedResponse.data; // assuming 'id' is the field name for video IDs
+      try {
+        const recommendedResponse = await axios.get(`${process.env.AI_SERVER}/recommend?email=${email}`);
+        recommendedVideoIds = recommendedResponse.data;
+      } catch (error) {
+        console.log(error.message)
+      }
+       // assuming 'id' is the field name for video IDs
     }
 
     
@@ -271,15 +276,22 @@ Videos.post("/updateview/:id", async (req, res) => {
     const { id } = req.params;
 
     const video = await videodata.findOne({ "VideoData._id": id });
+    
     const trending = await TrendingData.findOne({ videoid: id });
 
     if (!video) {
+      
       return res.status(404).json({ error: "Video not found" });
     }
-
+ 
     const videoIndex = video.VideoData.findIndex(
-      (data) => data._id.toString() === id
+      (data) => {
+       
+        return data._id.toString() === id
+      }
     );
+
+   
 
     if (videoIndex === -1) {
       return res.status(404).json({ error: "Video not found" });
@@ -288,11 +300,14 @@ Videos.post("/updateview/:id", async (req, res) => {
     video.VideoData[videoIndex].views += 1;
     await video.save();
 
-    if (!trending) {
-      return res.status(404).json({ error: "Video not found" });
+    if (trending) {
+      trending.views += 1;
+      await trending.save();
     }
-    trending.views += 1;
-    await trending.save();
+
+    
+    return res.status(200).json({ message: "Views Update Successfully" });
+    
   } catch (error) {
     res.json(error.message);
   }
